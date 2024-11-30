@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="C:/Users/Farah/source/repos/Gym-Management-system/Gym Management system/Database/Gym.db" readonly="0" foreign_keys="" case_sensitive_like="" temp_store="" wal_autocheckpoint="" synchronous=""/><attached/><window><main_tabs open="structure browser pragmas query" current="0"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="75"/><column_width id="3" width="4591"/><column_width id="4" width="0"/></tab_structure><tab_browse><current_table name="0,0:"/><default_encoding codec=""/><browse_table_settings/></tab_browse><tab_sql><sql name="SQL 1">INSERT into attendance(customer_id,AttDate, attendanced)
+VALUES(2, datetime('now'), 1)
+
+
+-- search 
+SELECT * from attendance as att 
+join Customer_info as cus on att.customer_id = cus.id
+GROUP by att.AttDate
+
+
+-- check if attended today 
+select 
+customer_id,
+date(),
+firstname || ' ' || cus.lastname AS full_name,
+ case
+	WHEN date(AttDate) = date('now')
+		THEN 1 
+	ELSE
+		0 END as Attended
+from Customer_info as cus
+join attendance on customer_id = cus.id
+WHERE cus.id = 3
+ORDER by AttDate DESC
+limit 1
+
+
+
+
+
+-- GROUP by firstname
+SELECT * from attendance
+order by AttDate DESC
+LIMIT 5
+
+-- get
+select att.customer_id,
+	   cus.firstname || ' ' || cus.lastname AS full_name,
+	   att.AttDate,
+	   att.attendanced
+from attendance as att 
+INNER JOIN Customer_info as cus on att.customer_id = cus.id
+where date(att.AttDate) = date()
+order by att.AttDate DESC
+
+
+
+
+-- Get today Attend
+select att.customer_id,
+	    cus.firstname || ' ' || cus.lastname AS full_name,
+	    att.AttDate,
+	    att.attendanced
+       from attendance as att 
+        INNER JOIN Customer_info as cus on att.customer_id = cus.id
+         where date(att.AttDate) = date()
+        order by att.AttDate DESC
+		LIMIT 5;
+
+
+
+-- attendance count  
+SELECT count(AttDate)as persent FROM attendance
+WHERE customer_id = 3 and date(AttDate) &gt;= date('now', 'start of month')
+
+SELECT att.customer_id,
+	    cus.firstname || ' ' || cus.lastname AS full_name,
+	    att.AttDate,
+	    att.attendanced  from attendance as att
+inner join Customer_info as cus on cus.id = att.customer_id
+WHERE date(AttDate) &gt;= date('now', 'start of month') and cus.id = 2
+order by AttDate ASC
+
+
+
+SELECT (SELECT count(*) FROM Customer_info) as cus_Count,
+		(SELECT count(*) from staff_information) as Stf_Count,
+		(SELECT count(attendanced) from attendance
+		where date(AttDate) = date('now')) as today_Count
+		
+		
+-- staff salary totals
+-- end of month
+SELECT date('now','start of month','+1 month','-1 day');
+-- ____________________
+
+-- Grand Total
+select sum(stff.salary) as Grand_Total from salaries as sal
+inner join staff_information as stff on stff.id = sal.staff_id
+
+-- this month Total
+select sum(stff.salary) as This_Month from salaries as sal
+inner join staff_information as stff on stff.id = sal.staff_id
+where sal.date_created = date('now','+0 month')
+
+-- this year Total
+select sum(stff.salary) as This_Year from salaries as sal
+inner join staff_information as stff on stff.id = sal.staff_id
+where sal.date_created = date('now', '-0 year')
+
+
+SELECT sum(p.price) + sum(p.signup_fee) from revenue as r
+inner join Customer_info as cus on cus.id = r.customer_id
+inner join plans as p on p.id = cus.planId
+as TotalRev,
+
+SELECT p.price , cus.firstname from revenue as r
+inner join Customer_info as cus on cus.id = r.customer_id
+inner join plans as p on p.id = cus.planId
+where strftime('%m', date(r.date_created)) = strftime('%m', date('now'))
+
+
+
+(SELECT sum(p.price) from revenue as r
+inner join Customer_info as cus on cus.id = r.customer_id
+inner join plans as p on p.id = cus.planId
+WHERE strftime('%Y', date(r.date_created)) = strftime('%Y', date('now'))
+AND r.date_created &lt;= date('now'))
+as YearRev
+
+
+
+
+INSERT into salaries(staff_id, date_created) 
+VALUES(1 , date('now','start of month','-0 month','-1 day')),
+(2 , date('now','start of month','-0 month','-1 day')),
+(3 , date('now','start of month','-0 month','-1 day')),
+(4 , date('now','start of month','-0 month','-1 day')),
+(5 , date('now','start of month','-0 month','-1 day')),
+(6 , date('now','start of month','-0 month','-1 day')),
+(7 , date('now','start of month','-0 month','-1 day'))
+
+
+-- plan	
+SELECT sum(p.price), p.plan_name from revenue as r
+inner join Customer_info as cus on cus.id = r.customer_id
+inner join plans as p on p.id = cus.planId
+where p.plan_name = 'planName';
+
+
+-- payed
+-- SELECT  p.price , cus.firstname, cus.id,
+--  CASE when strftime('%m', date(r.date_created)) = strftime('%m', date('now')) 
+-- 	THEN 'Payed' 
+-- 	ELSE 'Not Payed' 
+-- 	END as Payed   from  Customer_info as cus
+-- LEFT  join revenue as r  on cus.id = r.customer_id
+-- LEFT  join plans as p on p.id = cus.planId
+-- WHERE strftime('%m', date(r.date_created)) = strftime('%m', date('now')) OR r.date_created IS NULL;
+		
+		
+
+		
+		
+-- Non-Payed
+SELECT 
+	p.price,
+	cus.firstname||' '||cus.lastname,
+	cus.id,
+	CASE 
+	WHEN max(strftime('%m', date(r.date_created))) = strftime('%m', date('now')) THEN 'Payed'
+	ELSE 'Not Payed'
+END AS Payed
+FROM 
+    Customer_info AS cus
+LEFT JOIN 
+    revenue AS r ON cus.id = r.customer_id
+LEFT JOIN 
+    plans AS p ON p.id = cus.planId
+GROUP BY 
+    cus.id
+HAVING 
+    Payed = 'Not Payed';
+	
+INSERT INTO revenue(customer_id, date_created, user_id)VALUES(6, date('now'), 1);
+
+
+SELECT p.plan_name, sch.time_in, sch.time_out, stff.firstname||' '||stff.lastname as Fullname from schedule as sch
+INNER JOIN plans as p on sch.plan_id = p.id
+INNER JOIN staff_information as stff on stff.id = p.staff_id
+
+
+
+SELECT stf.id, stf.firstname||' '||stf.lastname,stf.salary, sal.date_created from salaries as sal
+inner join staff_information as stf on sal.staff_id = stf.id
+
+INSERT INTO salaries(staff_id, date_created)VALUES( ,date('now'))
+SELECT id from staff_information
+
+SELECT 
+	att.customer_id,
+	cus.firstname || ' ' || cus.lastname AS full_name,
+	att.AttDate,
+	att.attendanced  from attendance as att
+	inner join Customer_info as cus on cus.id = att.customer_id
+	WHERE strftime('%m', date(att.AttDate)) = strftime('%m', date('now')) and cus.id = 3
+	order by AttDate ASC
+	
+	
+	
+	
+	
+SELECT  ifnull(p.price,0.0)   , cus.firstname||' '||cus.lastname, cus.id,
+	CASE when strftime('%m', date(r.date_created)) = strftime('%m', date('now')) 
+	THEN 'Payed' 
+	ELSE 'Not Payed' 
+	END as Payed   from  Customer_info as cus
+ LEFT  join revenue as r  on cus.id = r.customer_id
+ LEFT  join plans as p on p.id = cus.planId
+	WHERE strftime('%m', date(r.date_created)) = strftime('%m', date('now')) OR r.date_created IS NULL;							
+	
+
+	SELECT ifnull(p.price,0.0),cus.firstname||' '||cus.lastname,cus.id,
+                        CASE 
+                            WHEN max(strftime('%m', date(r.date_created))) = strftime('%m', date('now')) THEN 'Payed'
+                            ELSE 'Not Payed'
+                        END AS Payed
+                        FROM Customer_info AS cus
+                        LEFT JOIN 
+                            revenue AS r ON cus.id = r.customer_id
+                        LEFT JOIN 
+                            plans AS p ON p.id = cus.planId
+                        GROUP BY 
+                            cus.id
+                        HAVING 
+                            Payed = 'Payed';
+							
+</sql><current_tab id="0"/></tab_sql></sqlb_project>
